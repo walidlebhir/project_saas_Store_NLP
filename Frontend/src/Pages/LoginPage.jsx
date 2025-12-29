@@ -36,8 +36,13 @@ import {
 import NavBarapp from '../Components/NavBarapp';
 import FooterApp from '../Components/FooterApp';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { AuthStore } from '../StateStore/AuthStore';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
+    const Navigate = useNavigate(); 
+    const {Login} = AuthStore() ; 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,15 +59,25 @@ export default function LoginPage() {
     if (!password) newErrors.password = "Le mot de passe est requis";
     
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setIsLoading(false);
-      return;
+        setErrors(newErrors);
+        setIsLoading(false);
+        return;
+    }
+
+    const user_auth = Login(email , password) ; 
+    if(user_auth){
+        if(user_auth.role = "store_admin"){
+            toast.success("Bien venue dans votre espace ") ; 
+            Navigate("/dashbord/Admin/store");
+        }
+        else{
+            Navigate("/espace/client") ; 
+        }
+    }else{
+        console.log("Porblemme dans le retourn de user "+user_auth) ; 
     }
     
-    setTimeout(() => {
-      console.log('Login attempt:', { email, password, rememberMe });
-      setIsLoading(false);
-    }, 1500);
+    
   };
 
   const handleSocialLogin = (provider) => {

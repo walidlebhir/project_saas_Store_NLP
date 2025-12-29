@@ -45,6 +45,8 @@ def image_search(request):
     uploaded_image = request.FILES["image"]
     image = Image.open(uploaded_image)
     query_embedding = get_image_embedding(image)
+    
+
 
     where_filter = {"category": category} if category else None
     results = CHROMA_COLLECTION.query(

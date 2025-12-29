@@ -55,6 +55,17 @@ export default function HomPage() {
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("relevance");
   const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  /* ===================== EFFECT POUR RECHARGER LES RÉSULTATS ===================== */
+  useEffect(() => {
+    // Recharger les résultats quand Datasearch change
+    if (Datasearch && Datasearch.length > 0 && hasSearched) {
+      setSearchResults(Datasearch);
+      setIsSearching(true);
+    }
+  }, [Datasearch, hasSearched]);
 
   /* ===================== PRODUITS STATIQUES ===================== */
   const staticProducts = [
@@ -193,8 +204,10 @@ export default function HomPage() {
     if (!text.trim()) return;
     setIsLoading(true);
     setIsSearching(true);
+    setHasSearched(true);
     try {
       await search_Text(text);
+      // Les résultats seront automatiquement chargés via l'effet useEffect
     } finally {
       setTimeout(() => setIsLoading(false), 500);
     }
@@ -210,6 +223,7 @@ export default function HomPage() {
       if (file) {
         setIsLoading(true);
         setIsSearching(true);
+        setHasSearched(true);
         setSearchMode(MODE_SEARCH.IMAGE);
         setImageFile(file);
         serachImage(file);
@@ -242,6 +256,7 @@ export default function HomPage() {
     if (!searchText.trim() && !imageFile) return;
     
     setIsSearching(true);
+    setHasSearched(true);
     switch (searchMode) {
       case MODE_SEARCH.IMAGE:
         if (imageFile) {
@@ -267,6 +282,8 @@ export default function HomPage() {
   const clearSearch = () => {
     setSearchText("");
     setIsSearching(false);
+    setHasSearched(false);
+    setSearchResults([]);
   };
 
   /* ===================== LOADER COMPONENT ===================== */
@@ -285,7 +302,7 @@ export default function HomPage() {
 
   /* ===================== SEARCH RESULTS MODAL ===================== */
   const SearchResultsModal = () => {
-    if (!isSearching || Datasearch.length === 0) return null;
+    if (!isSearching || searchResults.length === 0) return null;
 
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
@@ -298,7 +315,7 @@ export default function HomPage() {
                   Résultats pour "{searchText}"
                 </h2>
                 <p className="text-gray-600 mt-1">
-                  {Datasearch.length} produit{Datasearch.length > 1 ? "s" : ""} trouvé{Datasearch.length > 1 ? "s" : ""}
+                  {searchResults.length} produit{searchResults.length > 1 ? "s" : ""} trouvé{searchResults.length > 1 ? "s" : ""}
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -354,7 +371,7 @@ export default function HomPage() {
               {/* Results Grid */}
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Datasearch.map((product, index) => (
+                  {searchResults.map((product, index) => (
                     <div
                       key={index}
                       onClick={() => handleProductClick(product)}
@@ -365,6 +382,9 @@ export default function HomPage() {
                           src={`http://localhost:8000${product.image_url}`}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            e.target.src = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop";
+                          }}
                         />
                         <div className="absolute top-3 right-3">
                           <button className="bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors">
@@ -409,7 +429,7 @@ export default function HomPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {Datasearch.map((product, index) => (
+                  {searchResults.map((product, index) => (
                     <div
                       key={index}
                       onClick={() => handleProductClick(product)}
@@ -420,6 +440,9 @@ export default function HomPage() {
                           src={`http://localhost:8000${product.image_url}`}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            e.target.src = "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop";
+                          }}
                         />
                       </div>
                       
@@ -454,7 +477,7 @@ export default function HomPage() {
               )}
 
               {/* No Results */}
-              {Datasearch.length === 0 && (
+              {searchResults.length === 0 && (
                 <div className="text-center py-12">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                     <Search className="h-8 w-8 text-gray-400" />
@@ -696,7 +719,7 @@ export default function HomPage() {
   };
 
   /* ===================== DATA TO DISPLAY ===================== */
-  const products = Datasearch?.length > 0 ? Datasearch : staticProducts;
+  const products = isSearching ? searchResults : staticProducts;
   const displayProducts = isSearching ? [] : staticProducts;
 
   return (
